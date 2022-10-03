@@ -11,20 +11,27 @@
 #include <iostream>
 
 // Shaders.
-const char *vertexShaderSource = "#version 330 core\n"
+const char *vertexShaderSourceL = "#version 330 core\n"
+                                  "layout (location = 0) in vec3 aPos;\n"
+                                  "layout (location = 1) in vec3 aColor;\n"
+                                  "out vec3 ourColor;\n"
+                                  "void main()\n"
+                                  "{\n"
+                                  "   gl_Position = vec4(aPos, 1.0);\n"
+                                  "   ourColor = aColor;\n"
+                                  "}\0";
+const char *vertexShaderSourceR = "#version 330 core\n"
                                  "layout (location = 0) in vec3 aPos;\n"
-                                 "out vec4 vertexColor;\n"
                                  "void main()\n"
                                  "{\n"
                                  "   gl_Position = vec4(aPos, 1.0);\n"
-                                 "   vertexColor = vec4(0.5, 0.0, 0.0, 1.0);\n"
                                  "}\0";
 const char *fragmentShaderSourceL = "#version 330 core\n"
                                     "out vec4 FragColor;\n"
-                                    "in vec4 vertexColor;\n"
+                                    "in vec3 ourColor;\n"
                                     "void main()\n"
                                     "{\n"
-                                    "   FragColor = vertexColor;\n"
+                                    "   FragColor = vec4(ourColor, 1.0);\n"
                                     "}\0";
 const char *fragmentShaderSourceR = "#version 330 core\n"
                                     "out vec4 FragColor;\n"
@@ -58,19 +65,32 @@ int main(int argc, char * argv[]) {
 
   // Build and compile shader program.
   // ---
-  // Vertex shader.
-  unsigned int vertexShader;
-  vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-  glCompileShader(vertexShader);
+  // Vertex shader left triangle.
+  unsigned int vertexShaderLeftTriangle;
+  vertexShaderLeftTriangle = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertexShaderLeftTriangle, 1, &vertexShaderSourceL, NULL);
+  glCompileShader(vertexShaderLeftTriangle);
   // Check compilation.
   int  success;
   char infoLog[512];
-  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+  glGetShaderiv(vertexShaderLeftTriangle, GL_COMPILE_STATUS, &success);
   if(!success)
   {
-    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    glGetShaderInfoLog(vertexShaderLeftTriangle, 512, NULL, infoLog);
+    std::cout << "ERROR::SHADER::VERTEX::LEFT_TRIANGLE::COMPILATION_FAILED\n" << infoLog << std::endl;
+  }
+
+  // Vertex shader right triangle.
+  unsigned int vertexShaderRightTriangle;
+  vertexShaderRightTriangle = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertexShaderRightTriangle, 1, &vertexShaderSourceR, NULL);
+  glCompileShader(vertexShaderRightTriangle);
+  // Check compilation.
+  glGetShaderiv(vertexShaderRightTriangle, GL_COMPILE_STATUS, &success);
+  if(!success)
+  {
+    glGetShaderInfoLog(vertexShaderRightTriangle, 512, NULL, infoLog);
+    std::cout << "ERROR::SHADER::VERTEX::RIGHT_TRIANGLE::COMPILATION_FAILED\n" << infoLog << std::endl;
   }
 
   // Fragment shader left triangle.
@@ -90,7 +110,7 @@ int main(int argc, char * argv[]) {
   unsigned int shaderProgramLeftTriangle;
   shaderProgramLeftTriangle = glCreateProgram();
   // Attach and link the shaders.
-  glAttachShader(shaderProgramLeftTriangle, vertexShader);
+  glAttachShader(shaderProgramLeftTriangle, vertexShaderLeftTriangle);
   glAttachShader(shaderProgramLeftTriangle, fragmentShaderLeftTriangle);
   glLinkProgram(shaderProgramLeftTriangle);
   // Check linking.
@@ -118,7 +138,7 @@ int main(int argc, char * argv[]) {
   unsigned int shaderProgramRightTriangle;
   shaderProgramRightTriangle = glCreateProgram();
   // Attach and link the shaders.
-  glAttachShader(shaderProgramRightTriangle, vertexShader);
+  glAttachShader(shaderProgramRightTriangle, vertexShaderRightTriangle);
   glAttachShader(shaderProgramRightTriangle, fragmentShaderRightTriangle);
   glLinkProgram(shaderProgramRightTriangle);
   // Check linking.
@@ -130,7 +150,8 @@ int main(int argc, char * argv[]) {
   }
 
   // Delete the shaders.
-  glDeleteShader(vertexShader);
+  glDeleteShader(vertexShaderLeftTriangle);
+  glDeleteShader(vertexShaderRightTriangle);
   glDeleteShader(fragmentShaderLeftTriangle);
   glDeleteShader(fragmentShaderRightTriangle);
   // ---
@@ -143,9 +164,10 @@ int main(int argc, char * argv[]) {
       0.0f,  0.5f, 0.0f  // top
   };
   float verticesLeftTriangle[] = {
-      -1.0f, -0.5f, 0.0f,  // bottom left
-      0.0f, -0.5f, 0.0f,  // bottom middle
-      -0.5f,  0.5f, 0.0f,  // top left
+      // position          // color
+      -1.0f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom left
+       0.0f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom middle
+      -0.5f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f,  // top left
   };
   float verticesRightTriangle[] = {
       0.0f, -0.5f, 0.0f,  // bottom middle
@@ -174,9 +196,14 @@ int main(int argc, char * argv[]) {
   //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
   //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-  // Configure data layout of the current bound vertex array object.
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  // Configure data layout of the left triangle.
+  // 6 float values per vertex.
+  // - first 3 values represent position
+  // - second 3 values represent color
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
 
   // Bind the vertex array object for the right triangle.
   glBindVertexArray(VAO[1]);
