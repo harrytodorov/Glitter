@@ -1,45 +1,14 @@
-// Local Headers
+// Own Headers
 #include "glitter.hpp"
+#include "shader.h"
 
-// System Headers
+// 3rd party headers
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-// Standard Headers
+// STL Headers
 #include <cstdio>
 #include <cstdlib>
-#include <iostream>
-
-// Shaders.
-const char *vertexShaderSourceL = "#version 330 core\n"
-                                  "layout (location = 0) in vec3 aPos;\n"
-                                  "layout (location = 1) in vec3 aColor;\n"
-                                  "out vec3 ourColor;\n"
-                                  "void main()\n"
-                                  "{\n"
-                                  "   gl_Position = vec4(aPos, 1.0);\n"
-                                  "   ourColor = aColor;\n"
-                                  "}\0";
-const char *vertexShaderSourceR = "#version 330 core\n"
-                                 "layout (location = 0) in vec3 aPos;\n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "   gl_Position = vec4(aPos, 1.0);\n"
-                                 "}\0";
-const char *fragmentShaderSourceL = "#version 330 core\n"
-                                    "out vec4 FragColor;\n"
-                                    "in vec3 ourColor;\n"
-                                    "void main()\n"
-                                    "{\n"
-                                    "   FragColor = vec4(ourColor, 1.0);\n"
-                                    "}\0";
-const char *fragmentShaderSourceR = "#version 330 core\n"
-                                    "out vec4 FragColor;\n"
-                                    "uniform vec4 outColor;"
-                                    "void main()\n"
-                                    "{\n"
-                                    "   FragColor = outColor;\n"
-                                    "}\0";
 
 int main(int argc, char * argv[]) {
 
@@ -63,106 +32,11 @@ int main(int argc, char * argv[]) {
   gladLoadGL();
   fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
 
-  // Build and compile shader program.
-  // ---
-  // Vertex shader left triangle.
-  unsigned int vertexShaderLeftTriangle;
-  vertexShaderLeftTriangle = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertexShaderLeftTriangle, 1, &vertexShaderSourceL, NULL);
-  glCompileShader(vertexShaderLeftTriangle);
-  // Check compilation.
-  int  success;
-  char infoLog[512];
-  glGetShaderiv(vertexShaderLeftTriangle, GL_COMPILE_STATUS, &success);
-  if(!success)
-  {
-    glGetShaderInfoLog(vertexShaderLeftTriangle, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::VERTEX::LEFT_TRIANGLE::COMPILATION_FAILED\n" << infoLog << std::endl;
-  }
-
-  // Vertex shader right triangle.
-  unsigned int vertexShaderRightTriangle;
-  vertexShaderRightTriangle = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertexShaderRightTriangle, 1, &vertexShaderSourceR, NULL);
-  glCompileShader(vertexShaderRightTriangle);
-  // Check compilation.
-  glGetShaderiv(vertexShaderRightTriangle, GL_COMPILE_STATUS, &success);
-  if(!success)
-  {
-    glGetShaderInfoLog(vertexShaderRightTriangle, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::VERTEX::RIGHT_TRIANGLE::COMPILATION_FAILED\n" << infoLog << std::endl;
-  }
-
-  // Fragment shader left triangle.
-  unsigned int fragmentShaderLeftTriangle;
-  fragmentShaderLeftTriangle = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragmentShaderLeftTriangle, 1, &fragmentShaderSourceL, NULL);
-  glCompileShader(fragmentShaderLeftTriangle);
-  // Check compilation.
-  glGetShaderiv(fragmentShaderLeftTriangle, GL_COMPILE_STATUS, &success);
-  if(!success)
-  {
-    glGetShaderInfoLog(fragmentShaderLeftTriangle, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::FRAGMENT::LEFT_TRIANGLE::COMPILATION_FAILED\n" << infoLog << std::endl;
-  }
-
-  // Shader program left triangle.
-  unsigned int shaderProgramLeftTriangle;
-  shaderProgramLeftTriangle = glCreateProgram();
-  // Attach and link the shaders.
-  glAttachShader(shaderProgramLeftTriangle, vertexShaderLeftTriangle);
-  glAttachShader(shaderProgramLeftTriangle, fragmentShaderLeftTriangle);
-  glLinkProgram(shaderProgramLeftTriangle);
-  // Check linking.
-  glGetProgramiv(shaderProgramLeftTriangle, GL_LINK_STATUS, &success);
-  if (!success)
-  {
-    glGetShaderInfoLog(shaderProgramLeftTriangle, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::PROGRAM::LEFT_TRIANGLE::LINKING_FAILED\n" << infoLog << std::endl;
-  }
-
-  // Fragment shader right triangle.
-  unsigned int fragmentShaderRightTriangle;
-  fragmentShaderRightTriangle = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragmentShaderRightTriangle, 1, &fragmentShaderSourceR, NULL);
-  glCompileShader(fragmentShaderRightTriangle);
-  // Check compilation.
-  glGetShaderiv(fragmentShaderRightTriangle, GL_COMPILE_STATUS, &success);
-  if(!success)
-  {
-    glGetShaderInfoLog(fragmentShaderRightTriangle, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::FRAGMENT::RIGHT_TRIANGLE::COMPILATION_FAILED\n" << infoLog << std::endl;
-  }
-
-  // Shader program right triangle.
-  unsigned int shaderProgramRightTriangle;
-  shaderProgramRightTriangle = glCreateProgram();
-  // Attach and link the shaders.
-  glAttachShader(shaderProgramRightTriangle, vertexShaderRightTriangle);
-  glAttachShader(shaderProgramRightTriangle, fragmentShaderRightTriangle);
-  glLinkProgram(shaderProgramRightTriangle);
-  // Check linking.
-  glGetProgramiv(shaderProgramRightTriangle, GL_LINK_STATUS, &success);
-  if (!success)
-  {
-    glGetShaderInfoLog(shaderProgramRightTriangle, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::PROGRAM::RIGHT_TRIANGLE::LINKING_FAILED\n" << infoLog << std::endl;
-  }
-
-  // Delete the shaders.
-  glDeleteShader(vertexShaderLeftTriangle);
-  glDeleteShader(vertexShaderRightTriangle);
-  glDeleteShader(fragmentShaderLeftTriangle);
-  glDeleteShader(fragmentShaderRightTriangle);
-  // ---
+  // Set up shaders.
+  Shader leftTriangleShader("leftTriangle.vert", "leftTriangle.frag");
+  Shader rightTriangleShader("rightTriangle.vert", "rightTriangle.frag");
 
   // Set up vertex data and buffers, and configure vertex attributes.
-  // ---
-  float verticesOld[] = {
-      -0.5f, -0.5f, 0.0f, // left
-      0.5f, -0.5f, 0.0f, // right
-      0.0f,  0.5f, 0.0f  // top
-  };
   float verticesLeftTriangle[] = {
       // position          // color
       -1.0f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom left
@@ -174,14 +48,9 @@ int main(int argc, char * argv[]) {
       1.0f, -0.5f, 0.0f,  // bottom right
       0.5f,  0.5f, 0.0f   // top right
   };
-  //unsigned int indicesLeftTriangle[] =
-  //{
-  //    0, 1, 3,  // left triangle
-  //    1, 2, 4   // right triangle
-  //};
 
   // Vertex buffer object and vertex array object.
-  unsigned int VBO[2], EBO, VAO[2];
+  unsigned int VBO[2], VAO[2];
   glGenVertexArrays(2, VAO);
   glGenBuffers(2, VBO);
   //glGenBuffers(1, &EBO);
@@ -229,20 +98,19 @@ int main(int argc, char * argv[]) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Draw left triangle.
-    glUseProgram(shaderProgramLeftTriangle);
+    leftTriangleShader.use();
     glBindVertexArray(VAO[0]);
     //glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     // Draw right triangle.
-    glUseProgram(shaderProgramRightTriangle);
+    rightTriangleShader.use();
     // Change the color of the right triangle through a uniform variable.
-    float timeValue = glfwGetTime();
-    float greenValue = (sinf(timeValue) / 2.f) + 0.5f;
-    int vertexColorLocation = glGetUniformLocation(shaderProgramRightTriangle, "outColor");
+    auto timeValue = static_cast<float>(glfwGetTime());
+    auto greenValue = (sinf(timeValue) / 2.f) + 0.5f;
     // Note: We need to make use of the shader program before setting the color
     //       through n uniform variable.
-    glUniform4f(vertexColorLocation, 0.f, greenValue, 0.f, 1.f);
+    rightTriangleShader.setVec4f("outColor", {0.f, greenValue, 0.f, 1.f});
     glBindVertexArray(VAO[1]);
     // glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -258,8 +126,6 @@ int main(int argc, char * argv[]) {
   // De-allocate all resources once they've outlived their purpose.
   glDeleteVertexArrays(2, VAO);
   glDeleteBuffers(2, VBO);
-  glDeleteProgram(shaderProgramLeftTriangle);
-  glDeleteProgram(shaderProgramRightTriangle);
 
   glfwTerminate();
   return EXIT_SUCCESS;
