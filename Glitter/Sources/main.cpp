@@ -28,9 +28,10 @@ const char *fragmentShaderSourceL = "#version 330 core\n"
                                     "}\0";
 const char *fragmentShaderSourceR = "#version 330 core\n"
                                     "out vec4 FragColor;\n"
+                                    "uniform vec4 outColor;"
                                     "void main()\n"
                                     "{\n"
-                                    "   FragColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);\n"
+                                    "   FragColor = outColor;\n"
                                     "}\0";
 
 int main(int argc, char * argv[]) {
@@ -200,13 +201,21 @@ int main(int argc, char * argv[]) {
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Draw left triangle!
+    // Draw left triangle.
     glUseProgram(shaderProgramLeftTriangle);
     glBindVertexArray(VAO[0]);
     //glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
+    // Draw right triangle.
     glUseProgram(shaderProgramRightTriangle);
+    // Change the color of the right triangle through a uniform variable.
+    float timeValue = glfwGetTime();
+    float greenValue = (sinf(timeValue) / 2.f) + 0.5f;
+    int vertexColorLocation = glGetUniformLocation(shaderProgramRightTriangle, "outColor");
+    // Note: We need to make use of the shader program before setting the color
+    //       through n uniform variable.
+    glUniform4f(vertexColorLocation, 0.f, greenValue, 0.f, 1.f);
     glBindVertexArray(VAO[1]);
     // glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
