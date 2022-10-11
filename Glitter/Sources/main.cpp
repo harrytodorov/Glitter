@@ -99,6 +99,7 @@ int main(int argc, char * argv[]) {
 
     // Draw left triangle.
     leftTriangleShader.use();
+    leftTriangleShader.setFloat("horizontalOffset", 0.5f);
     glBindVertexArray(VAO[0]);
     //glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
