@@ -5,10 +5,12 @@
 // 3rd party headers
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "stb_image.h"
 
 // STL Headers
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
 int main(int argc, char * argv[]) {
 
@@ -47,6 +49,11 @@ int main(int argc, char * argv[]) {
       0.0f, -0.5f, 0.0f,  // bottom middle
       1.0f, -0.5f, 0.0f,  // bottom right
       0.5f,  0.5f, 0.0f   // top right
+  };
+  float texCoordsRightTriangle[] = {
+      0.0f, 0.0f,  // bottom middle
+      1.0f, 0.0f,  // bottom right
+      0.5f, 1.0f   // top right
   };
 
   // Vertex buffer object and vertex array object.
@@ -87,6 +94,34 @@ int main(int argc, char * argv[]) {
 
   // uncomment this call to draw in wireframe polygons.
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+  // Set up texture.
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  // Configure the texture warping/filtering options on the
+  // currently bound texture object.
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+  // Load the texture image.
+  int width, height, nrChannels;
+  unsigned char *textureData = stbi_load("container.jpg",
+                                         &width, &height, &nrChannels, 0);
+  if (textureData)
+  {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  }
+  else
+  {
+    std::cout << "Failed to load texture." << std::endl;
+  }
+
+  // Free the texture image memory.
+  stbi_image_free(textureData);
 
   // Rendering Loop
   while (glfwWindowShouldClose(mWindow) == false) {
