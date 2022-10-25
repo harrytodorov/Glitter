@@ -34,66 +34,52 @@ int main(int argc, char * argv[]) {
   gladLoadGL();
   fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
 
-  // Set up shaders.
-  Shader leftTriangleShader("leftTriangle.vert", "leftTriangle.frag");
-  Shader rightTriangleShader("rightTriangle.vert", "rightTriangle.frag");
+  // Build and compile shader programs.
+  Shader rectangleShader("rectangle.vert", "rectangle.frag");
 
   // Set up vertex data and buffers, and configure vertex attributes.
-  float verticesLeftTriangle[] = {
-      // position          // color
-      -1.0f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom left
-       0.0f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom middle
-      -0.5f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f,  // top left
+  float verticesRectangle[] = {
+      // positions          // colors           // texture coords
+      0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+      0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+      -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+      -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left
   };
-  float verticesRightTriangle[] = {
-      0.0f, -0.5f, 0.0f,  // bottom middle
-      1.0f, -0.5f, 0.0f,  // bottom right
-      0.5f,  0.5f, 0.0f   // top right
-  };
-  float texCoordsRightTriangle[] = {
-      0.0f, 0.0f,  // bottom middle
-      1.0f, 0.0f,  // bottom right
-      0.5f, 1.0f   // top right
+  unsigned int rectangleIndices[] = {
+      0, 1, 3,  // left triangle
+      1, 2, 3  // right triangle
   };
 
   // Vertex buffer object and vertex array object.
-  unsigned int VBO[2], VAO[2];
-  glGenVertexArrays(2, VAO);
-  glGenBuffers(2, VBO);
-  //glGenBuffers(1, &EBO);
+  unsigned int VBO, VAO;
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
+
   // We first bind the vertex array object for the left triangle.
-  glBindVertexArray(VAO[0]);
+  glBindVertexArray(VAO);
 
   // Bind Vertex array buffer.
-  glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(verticesLeftTriangle), verticesLeftTriangle, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(verticesRectangle), verticesRectangle, GL_STATIC_DRAW);
 
-  // Bind element array buffer object.
-  //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+  // Create the element buffer object.
+  GLuint EBO;
+  glGenBuffers(1, &EBO);
 
-  // Configure data layout of the left triangle.
-  // 6 float values per vertex.
-  // - first 3 values represent position
-  // - second 3 values represent color
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+  // Bind it and configure the data layout.
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(rectangleIndices), rectangleIndices, GL_STATIC_DRAW);
+
+  // Configure data layout for the rectangle.
+  // Vertex positions
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+  // Color
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
-
-  // Bind the vertex array object for the right triangle.
-  glBindVertexArray(VAO[1]);
-
-  // Bind Vertex array buffer.
-  glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(verticesRightTriangle), verticesRightTriangle, GL_STATIC_DRAW);
-
-  // Configure data layout of the current bound vertex array object.
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-
-  // uncomment this call to draw in wireframe polygons.
-  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  // Texture
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+  glEnableVertexAttribArray(2);
 
   // Set up texture.
   GLuint texture;
@@ -132,27 +118,11 @@ int main(int argc, char * argv[]) {
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Draw left triangle.
-    leftTriangleShader.use();
-    leftTriangleShader.setFloat("horizontalOffset", 0.5f);
-    glBindVertexArray(VAO[0]);
-    //glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    // Draw right triangle.
-    rightTriangleShader.use();
-    // Change the color of the right triangle through a uniform variable.
-    auto timeValue = static_cast<float>(glfwGetTime());
-    auto greenValue = (sinf(timeValue) / 2.f) + 0.5f;
-    // Note: We need to make use of the shader program before setting the color
-    //       through n uniform variable.
-    rightTriangleShader.setVec4f("outColor", {0.f, greenValue, 0.f, 1.f});
-    glBindVertexArray(VAO[1]);
-    // glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    //glBindVertexArray(0);
-    // glBindVertexArray(0);  // No need to unbind it every time, as we only
-    // have a single vertex array object.
+    // Draw rectangle.
+    rectangleShader.use();
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     // Flip Buffers and Draw
     glfwSwapBuffers(mWindow);
@@ -160,8 +130,9 @@ int main(int argc, char * argv[]) {
   }
 
   // De-allocate all resources once they've outlived their purpose.
-  glDeleteVertexArrays(2, VAO);
-  glDeleteBuffers(2, VBO);
+  glDeleteVertexArrays(1, &VAO);
+  glDeleteBuffers(1, &VBO);
+  glDeleteBuffers(1, &EBO);
 
   glfwTerminate();
   return EXIT_SUCCESS;
