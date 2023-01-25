@@ -40,8 +40,8 @@ int main(int argc, char * argv[]) {
   // Set up vertex data and buffers, and configure vertex attributes.
   float verticesRectangle[] = {
       // positions          // colors           // texture coords
-      0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-      0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+       0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+       0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
       -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
       -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left
   };
@@ -81,10 +81,11 @@ int main(int argc, char * argv[]) {
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
   glEnableVertexAttribArray(2);
 
-  // Set up texture.
-  GLuint texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  // Set up the container texture.
+  GLuint containerTexture;
+  glGenTextures(1, &containerTexture);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, containerTexture);
   // Configure the texture warping/filtering options on the
   // currently bound texture object.
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -93,12 +94,13 @@ int main(int argc, char * argv[]) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
   // Load the texture image.
-  int width, height, nrChannels;
-  unsigned char *textureData = stbi_load("container.jpg",
-                                         &width, &height, &nrChannels, 0);
-  if (textureData)
+  int widthContainer, heightContainer, nrChannelsContainer;
+  stbi_set_flip_vertically_on_load(true);
+  unsigned char *textureDataContainer = stbi_load("container.jpg",
+                                         &widthContainer, &heightContainer, &nrChannelsContainer, 0);
+  if (textureDataContainer)
   {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, widthContainer, heightContainer, 0, GL_RGB, GL_UNSIGNED_BYTE, textureDataContainer);
     glGenerateMipmap(GL_TEXTURE_2D);
   }
   else
@@ -107,7 +109,40 @@ int main(int argc, char * argv[]) {
   }
 
   // Free the texture image memory.
-  stbi_image_free(textureData);
+  stbi_image_free(textureDataContainer);
+
+  // Set up the face texture.
+  GLuint faceTexture;
+  glGenTextures(1, &faceTexture);
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, faceTexture);
+  // Configure the texture warping/filtering options on the
+  // currently bound texture object.
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+  // Load the texture image.
+  int widthFace, heightFace, nrChannelsFace;
+  unsigned char *textureDataFace = stbi_load("awesomeface.png",
+                                              &widthFace, &heightFace, &nrChannelsFace, 0);
+  if (textureDataFace)
+  {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, widthFace, heightFace, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureDataFace);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  }
+  else
+  {
+    std::cout << "Failed to load texture." << std::endl;
+  }
+
+  // Free the texture image memory.
+  stbi_image_free(textureDataFace);
+
+  rectangleShader.use();
+  rectangleShader.setInt("containerTexture", 0);
+  rectangleShader.setInt("faceTexture", 1);
 
   // Rendering Loop
   while (glfwWindowShouldClose(mWindow) == false) {
@@ -118,9 +153,14 @@ int main(int argc, char * argv[]) {
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Draw rectangle.
     rectangleShader.use();
-    glBindTexture(GL_TEXTURE_2D, texture);
+    // Switch between active textures.
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, containerTexture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, faceTexture);
+
+    // Draw rectangle.
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
